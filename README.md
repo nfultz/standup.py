@@ -18,8 +18,8 @@ note the URL.
 This will print each open ticket assigned to you, and prompt you to leave an
 optional comment.
 
-At the end, it will ask to post to slack. Type anything to send, and `^C` to
-quit without posting.
+At the end, it will ask to post to slack. Type `y` to send, and `^C` to quit
+without posting.
 
 
 
