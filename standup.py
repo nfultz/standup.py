@@ -6,12 +6,19 @@ from jira import JIRA
 import requests
 
 jira = JIRA(sys.argv[1])
-issues = jira.search_issues('assignee = currentUser() and status = Open')
+issues = jira.search_issues('assignee = currentUser() and status  in ("Open", "In Progress", "Blocked")')
+
+status_to_emoji = {
+  'Blocked': ':scream:',
+  'In Progress': ':sunglasses:',
+  'Open': ':doge:'
+}
+
 
 lines = []
 for i in issues:
-    print u'• %s\t%s' % (i.key.ljust(10), i.fields.summary)
-    txt = u'• <%s|%s>\t%s' % (i.permalink(), i.key, i.fields.summary)
+    print u'• %s[%s]\t%s' % (i.key.ljust(10), i.fields.status, i.fields.summary)
+    txt = u'• <%s|%s>[%s]\t%s' % (i.permalink(), i.key, status_to_emoji[i.fields.status.name], i.fields.summary)
     lines.append(txt)
     lastcomment = jira.comments(i)
     if lastcomment:
