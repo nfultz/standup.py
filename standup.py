@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # coding: utf-8
-import copy
 import re
 import sys
 
@@ -25,8 +24,6 @@ status_to_emoji = {
 lines = []
 issue_changes = []
 for i in issues:
-    # Make copy to separate changes
-    i_copy = copy.deepcopy(i)
     print u'• %s[%s]\t%s' % (i.key.ljust(10), i.fields.status, i.fields.summary)
     lastcomment = jira.comments(i)
     if lastcomment:
@@ -47,11 +44,11 @@ for i in issues:
         while transition_selection not in transition_options:
             transition_selection = raw_input("Where do you want to move the ticket? ")
         # Changes status name to whatever user chooses
-        i_copy.fields.status.name = transition_dict[transition_selection]
+        i.fields.status.name = transition_dict[transition_selection]
 
     # Adds current info to be printed
-    txt = u'• <%s|%s>[%s]\t%s' % (i_copy.permalink(), i_copy.key, status_to_emoji[i_copy.fields.status.name],
-                                  i_copy.fields.summary)
+    txt = u'• <%s|%s>[%s]\t%s' % (i.permalink(), i.key, status_to_emoji[i.fields.status.name],
+                                  i.fields.summary)
     lines.append(txt)
 
     # Add a comment to ticket
