@@ -64,7 +64,8 @@ for i in issues:
 
 # Add final commentary
 final_comment = raw_input("Any last thoughts? ")
-lines.append('Other thoughts: ' + final_comment)
+if final_comment:
+    lines.append('Other thoughts: ' + final_comment)
 
 print '-' * 78
 for line in lines:
