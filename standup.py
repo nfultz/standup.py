@@ -17,7 +17,8 @@ status_to_emoji = {
   'In Progress': ':sunglasses:',
   'Open': ':doge:',
   'Soft Launch': ':pray:',
-  'Rollout': ':chart_with_upwards_trend:'
+  'Rollout': ':chart_with_upwards_trend:',
+  'Done': ':tada:'
 }
 
 
