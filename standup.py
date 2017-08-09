@@ -48,7 +48,7 @@ for i in issues:
         i.fields.status.name = transition_dict[transition_selection]
 
     # Adds current info to be printed
-    txt = u'• <%s|%s>[%s]\t%s' % (i.permalink(), i.key, status_to_emoji[i.fields.status.name],
+    txt = u'• <%s|%s>[%s]\t%s' % (i.permalink(), i.key, status_to_emoji.get(i.fields.status.name, ':chicken:'),
                                   i.fields.summary)
     lines.append(txt)
 
