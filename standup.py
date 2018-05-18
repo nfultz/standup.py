@@ -1,16 +1,16 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # coding: utf-8
 import re
 import sys
 
-from jira import JIRA
+from github import Github
 import requests
 
-jira = JIRA(sys.argv[1])
-issues = jira.search_issues('''assignee = currentUser()
-                            AND sprint in openSprints()
-                            AND status != Done
-                            AND type != Epic''')
+gh = Github(sys.argv[1])
+repo = gh.get_repo(sys.argv[2])
+issues = repo.get_issues(assignee=gh.get_user().login, state='open')
+
+w_url = sys.argv[3]
 
 status_to_emoji = {
   'Blocked': ':scream:',
@@ -23,73 +23,72 @@ status_to_emoji = {
 
 
 lines = []
-issue_changes = []
+comments = []
+to_close = []
+to_block = []
+to_unblock = []
+
 for i in issues:
-    print u'• %s[%s]\t%s' % (i.key.ljust(10), i.fields.status, i.fields.summary)
-    lastcomment = jira.comments(i)
+    s = 'blocked' if 'blocked' in {x.name for x in i.labels} else 'open'
+    print( u'• %s[%s]\t%s' % (str(i.number).ljust(10), s, i.title) )
+    lastcomment = [x for x in i.get_comments()]
     if lastcomment:
-        lastcomment = max(lastcomment, key=lambda c: c.updated)
-        print '> ', lastcomment.body
-        print '-' * 40
+        lastcomment = lastcomment[-1]
+        print( '> ', lastcomment.body)
+        print( '-' * 40)
+
+    emoji = ':thinking_face:' if s == 'open' else ':scream:'
 
     # Ask if wanting to transition the ticket
-    transition_selection = ''
-    transition_response = raw_input("Would you like to transition this ticket?(y/n) ")
-    if transition_response == 'y':
-        transitions = jira.transitions(i)
-        transition_dict = {}
-        for t in transitions:
-            transition_dict[t['id']] = t['name']
-            print t['id'], '->', t['name']
-        transition_options = set(transition_dict.keys())
-        while transition_selection not in transition_options:
-            transition_selection = raw_input("Where do you want to move the ticket? ")
-        # Changes status name to whatever user chooses
-        i.fields.status.name = transition_dict[transition_selection]
+    comment = input("Comment on this ticket?(prefix with !bu)")
+    if comment.startswith('!'):
+        to_close.append(i)
+        emoji = ":toot:"
+        comment = comment[1:].strip()
+    elif comment.startswith('b'):
+        to_block.append(i)
+        emoji = ":scream:"
+        comment = comment[1:].strip()
+    elif comment.startswith('!'):
+        to_unblock.append(i)
+        emoji = ":sunglasses:"
+        comment = comment[1:].strip()
 
     # Adds current info to be printed
-    txt = u'• <%s|%s>[%s]\t%s' % (i.permalink(), i.key, status_to_emoji.get(i.fields.status.name, ':chicken:'),
-                                  i.fields.summary)
+    txt = u'• <%s|%s>[%s]\t%s' % (i.html_url, i.number, emoji, i.title)
     lines.append(txt)
 
     # Add a comment to ticket
-    comment = raw_input("Comment> ")
-    if comment == 'a':
-        comment = lastcomment.body
-    elif comment:
+    if comment:
         lines.append('> ' + comment)
-        issue_changes.append((i, comment, transition_selection))
-    else:
-        comment = ''
-        issue_changes.append((i, comment, transition_selection))
+        comments.append((i, comment))
 
 # Add final commentary
-final_comment = raw_input("Any last thoughts? ")
+final_comment = input("Any last thoughts? ")
 if final_comment:
     lines.append('Other thoughts: ' + final_comment)
 
-print '-' * 78
+print( '-' * 78)
 for line in lines:
-    print re.sub('http[^|]*[|]', '', line)
+    print( re.sub('http[^|]*[|]', '', line))
 
-# Commit changes to Jira
-commit = raw_input('Commit these changes to Jira?(yn) ')
-if commit == 'y':
-    for issue, comment, transition in issue_changes:
-        if comment != '':
-            jira.add_comment(issue, comment)
-        if transition != '':
-            jira.transition_issue(issue, transition)
-else:
-    print 'Terminated without implementing changes.'
-    sys.exit()
 
-post = raw_input('post to slack?(yn) ')
+post = input('post to slack?(yn) ')
 if len(sys.argv) <= 2 or post != 'y':
-    print 'Terminated without posting to slack.'
+    print( 'Terminated without posting to slack.')
     sys.exit()
 
-w_url = sys.argv[2]
 
 requests.post(w_url, json=dict(text='\n'.join(lines)))
 
+for issue, comment in comments:
+    issue.create_comment(comment)
+
+for issue in to_close:
+    issue.edit(state="closed")
+
+for issue in to_block:
+    issue.add_to_labels("blocked")
+
+for issue in to_unblock:
+    issue.remove_from_labels("blocked")
