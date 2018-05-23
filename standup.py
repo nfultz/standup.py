@@ -37,7 +37,7 @@ for i in issues:
         print( '> ', lastcomment.body)
         print( '-' * 40)
 
-    emoji = ':thinking_face:' if s == 'open' else ':scream:'
+    emoji = ':thinking_face:' if s == 'open' else ':aargh:'
 
     # Ask if wanting to transition the ticket
     comment = input("Comment on this ticket?(prefix with !bu)")
@@ -47,7 +47,7 @@ for i in issues:
         comment = comment[1:].strip()
     elif comment.startswith('b'):
         to_block.append(i)
-        emoji = ":scream:"
+        emoji = ":aargh:"
         comment = comment[1:].strip()
     elif comment.startswith('!'):
         to_unblock.append(i)
